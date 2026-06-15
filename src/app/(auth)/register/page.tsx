@@ -42,7 +42,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: form.email,
-          password_hash: form.password,
+          password: form.password,
           full_name: form.fullName,
           role_key: form.roleKey,
         }),
@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Registration failed. Try again.');
+        throw new Error(data.error || data.message || 'Registration failed. Try again.');
       }
 
       await refreshSession();
