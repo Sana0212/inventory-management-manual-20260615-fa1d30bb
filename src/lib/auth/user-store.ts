@@ -36,6 +36,12 @@ export function authUserRole(user: AuthUserRecord, fallback = 'user'): string {
   return user.role_key ?? user.role ?? fallback;
 }
 
+function omitUndefined<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
+}
+
 export async function findUserByEmail(email: string): Promise<AuthUserRecord | null> {
   const db = getAdminFirestore();
   const snapshot = await appCollection(db, 'users')
@@ -62,13 +68,15 @@ export async function createUserRecord(input: {
   await ensureAppTables(db);
   const ref = appCollection(db, 'users').doc();
   const timestamp = new Date().toISOString();
-  await ref.set({
-    ...input,
-    email: normalizeEmail(input.email),
-    role_key: input.role_key ?? 'employee',
-    is_active: input.is_active ?? true,
-    created_at: timestamp,
-  });
+  await ref.set(
+    omitUndefined({
+      ...input,
+      email: normalizeEmail(input.email),
+      role_key: input.role_key ?? 'employee',
+      is_active: input.is_active ?? true,
+      created_at: timestamp,
+    }),
+  );
   return ref.id;
 }
 
@@ -80,5 +88,5 @@ export async function updateUserRecord(
   await ensureAppTables(db);
   const next = { ...patch };
   if (next.email) next.email = normalizeEmail(next.email);
-  await appCollection(db, 'users').doc(id).update(next);
+  await appCollection(db, 'users').doc(id).update(omitUndefined(next));
 }
